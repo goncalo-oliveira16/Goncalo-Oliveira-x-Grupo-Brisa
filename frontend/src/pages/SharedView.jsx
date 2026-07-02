@@ -109,8 +109,7 @@ export default function SharedView() {
             <span className="text-neutral-400">x Grupo Brisa</span>
           </h1>
           <p className="mt-4 text-sm text-neutral-600 max-w-xl">
-            A live view of what&apos;s being worked on, how many hours have gone
-            in, and what has been delivered.
+            Stay up to date with Gonçalo&apos;s progress and ongoing work.
           </p>
         </div>
       </header>
