@@ -66,28 +66,32 @@ export default function Dashboard() {
   }, [load]);
 
   const yearOptions = useMemo(() => {
-    const seen = new Set();
+    // Always start from 2025 and go through the current year (or later if a
+    // project has a deadline in a future year).
+    const years = new Set();
+    const nowYear = new Date().getFullYear();
+    const maxProjectYear = projects.reduce((max, p) => {
+      const d = projectRefDate(p);
+      return d && d.getFullYear() > max ? d.getFullYear() : max;
+    }, 0);
+    const endYear = Math.max(nowYear, maxProjectYear, 2025);
+    for (let y = 2025; y <= endYear; y++) years.add(y);
+    // Include any earlier years that actually have projects, just in case.
     for (const p of projects) {
       const d = projectRefDate(p);
-      if (d) seen.add(d.getFullYear());
+      if (d) years.add(d.getFullYear());
     }
-    return Array.from(seen).sort((a, b) => b - a);
+    return Array.from(years).sort((a, b) => a - b);
   }, [projects]);
 
   const monthOptions = useMemo(() => {
-    // Which months exist in projects (optionally scoped to selected year).
-    const seen = new Set();
-    for (const p of projects) {
-      const d = projectRefDate(p);
-      if (!d) continue;
-      if (yearFilter !== "all" && d.getFullYear() !== Number(yearFilter))
-        continue;
-      seen.add(d.getMonth()); // 0..11
-    }
-    return Array.from(seen)
-      .sort((a, b) => a - b)
-      .map((m) => ({ value: String(m), label: MONTH_LABELS[m] }));
-  }, [projects, yearFilter]);
+    // Always show all 12 months in calendar order, regardless of whether
+    // projects exist in that month yet.
+    return MONTH_LABELS.map((label, idx) => ({
+      value: String(idx),
+      label,
+    }));
+  }, []);
 
   const filtered = useMemo(() => {
     return projects.filter((p) => {
