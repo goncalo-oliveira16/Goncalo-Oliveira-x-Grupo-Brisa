@@ -1,13 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Share2, Search, Clock, LayoutGrid } from "lucide-react";
+import { Plus, Share2, Search, Clock, LayoutGrid, Calendar } from "lucide-react";
 import { projectsApi, statsApi } from "@/lib/api";
 import { StatsBar } from "@/components/StatsBar";
 import { ProjectRow } from "@/components/ProjectRow";
 import { ProjectDialog } from "@/components/ProjectDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { STATUSES } from "@/lib/constants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -15,6 +22,28 @@ const FILTERS = [
   { value: "all", label: "All" },
   ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
 ];
+
+const MONTH_LABELS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Return the reference date used for month bucketing:
+// prefer deadline, fall back to created_at.
+const projectRefDate = (p) => {
+  const raw = p.deadline || p.created_at;
+  if (!raw) return null;
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const monthKey = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+const monthLabel = (key) => {
+  const [y, m] = key.split("-");
+  return `${MONTH_LABELS[Number(m) - 1]} ${y}`;
+};
 
 export default function Dashboard() {
   const [projects, setProjects] = useState([]);
@@ -24,6 +53,7 @@ export default function Dashboard() {
   const [shareOpen, setShareOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
   const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
@@ -42,9 +72,27 @@ export default function Dashboard() {
     load();
   }, [load]);
 
+  const monthOptions = useMemo(() => {
+    const seen = new Map();
+    for (const p of projects) {
+      const d = projectRefDate(p);
+      if (!d) continue;
+      const k = monthKey(d);
+      if (!seen.has(k)) seen.set(k, monthLabel(k));
+    }
+    // newest first
+    return Array.from(seen.entries())
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .map(([value, label]) => ({ value, label }));
+  }, [projects]);
+
   const filtered = useMemo(() => {
     return projects.filter((p) => {
       if (filter !== "all" && p.status !== filter) return false;
+      if (monthFilter !== "all") {
+        const d = projectRefDate(p);
+        if (!d || monthKey(d) !== monthFilter) return false;
+      }
       if (query.trim()) {
         const q = query.toLowerCase();
         return (
@@ -55,7 +103,7 @@ export default function Dashboard() {
       }
       return true;
     });
-  }, [projects, filter, query]);
+  }, [projects, filter, monthFilter, query]);
 
   const openNew = () => {
     setEditing(null);
@@ -109,9 +157,9 @@ export default function Dashboard() {
               data-testid="dashboard-title"
               className="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tighter text-neutral-950"
             >
-              Every hour,
+              Gonçalo Oliveira
               <br />
-              <span className="text-neutral-400">accounted for.</span>
+              <span className="text-neutral-400">x Grupo Brisa</span>
             </h2>
           </div>
           <Button
@@ -146,15 +194,40 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <Input
-              data-testid="search-input"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search projects…"
-              className="rounded-none border-neutral-300 pl-9 h-10 w-64 bg-white"
-            />
+          <div className="flex items-center gap-2">
+            <Select value={monthFilter} onValueChange={setMonthFilter}>
+              <SelectTrigger
+                data-testid="month-filter"
+                className="rounded-none border-neutral-300 h-10 w-[160px] bg-white text-xs font-bold uppercase tracking-[0.1em]"
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5 text-neutral-500" />
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent className="rounded-none">
+                <SelectItem value="all" data-testid="month-filter-all">
+                  All Months
+                </SelectItem>
+                {monthOptions.map((m) => (
+                  <SelectItem
+                    key={m.value}
+                    value={m.value}
+                    data-testid={`month-filter-${m.value}`}
+                  >
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <Input
+                data-testid="search-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search projects…"
+                className="rounded-none border-neutral-300 pl-9 h-10 w-64 bg-white"
+              />
+            </div>
           </div>
         </section>
 
@@ -173,7 +246,7 @@ export default function Dashboard() {
               Hours
             </div>
             <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
-              Due
+              Deadline
             </div>
             <div className="col-span-1"></div>
           </div>
