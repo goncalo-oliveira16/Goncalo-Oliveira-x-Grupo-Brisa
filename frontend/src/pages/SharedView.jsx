@@ -104,9 +104,9 @@ export default function SharedView() {
             data-testid="shared-title"
             className="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tighter text-neutral-950 max-w-3xl"
           >
-            Project Hours
+            Gonçalo Oliveira
             <br />
-            <span className="text-neutral-400">& Progress Report.</span>
+            <span className="text-neutral-400">x Grupo Brisa</span>
           </h1>
           <p className="mt-4 text-sm text-neutral-600 max-w-xl">
             A live view of what&apos;s being worked on, how many hours have gone
