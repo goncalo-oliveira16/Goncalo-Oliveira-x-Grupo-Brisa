@@ -43,7 +43,6 @@ export default function ProjectDetail() {
       setEntries(e);
     } catch (err) {
       toast.error("Failed to load project");
-      console.error(err);
     } finally {
       setLoading(false);
     }

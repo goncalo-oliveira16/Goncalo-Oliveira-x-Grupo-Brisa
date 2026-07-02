@@ -33,7 +33,6 @@ export default function Dashboard() {
       setStats(s);
     } catch (err) {
       toast.error("Failed to load data");
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -179,53 +178,60 @@ export default function Dashboard() {
             <div className="col-span-1"></div>
           </div>
 
-          {loading ? (
-            <div className="p-12 text-center text-neutral-500 text-sm">
-              Loading…
-            </div>
-          ) : filtered.length === 0 ? (
-            <div
-              data-testid="empty-state"
-              className="p-16 text-center flex flex-col items-center gap-4"
-            >
-              <div className="w-14 h-14 border border-neutral-300 flex items-center justify-center">
-                <LayoutGrid className="w-6 h-6 text-neutral-400" strokeWidth={1.5} />
-              </div>
-              <div>
-                <div className="font-display text-xl font-bold text-neutral-900">
-                  {projects.length === 0
-                    ? "No projects yet"
-                    : "Nothing matches those filters"}
+          {(() => {
+            if (loading) {
+              return (
+                <div className="p-12 text-center text-neutral-500 text-sm">
+                  Loading…
                 </div>
-                <p className="text-sm text-neutral-500 mt-1">
-                  {projects.length === 0
-                    ? "Start by creating your first project."
-                    : "Try clearing the search or filter."}
-                </p>
-              </div>
-              {projects.length === 0 && (
-                <Button
-                  onClick={openNew}
-                  className="rounded-none bg-neutral-950 hover:bg-neutral-800 mt-2"
-                  data-testid="empty-new-project-btn"
+              );
+            }
+            if (filtered.length === 0) {
+              const isEmpty = projects.length === 0;
+              return (
+                <div
+                  data-testid="empty-state"
+                  className="p-16 text-center flex flex-col items-center gap-4"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create project
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div>
-              {filtered.map((p) => (
-                <ProjectRow
-                  key={p.id}
-                  project={p}
-                  onChanged={load}
-                  onEdit={openEdit}
-                />
-              ))}
-            </div>
-          )}
+                  <div className="w-14 h-14 border border-neutral-300 flex items-center justify-center">
+                    <LayoutGrid className="w-6 h-6 text-neutral-400" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <div className="font-display text-xl font-bold text-neutral-900">
+                      {isEmpty ? "No projects yet" : "Nothing matches those filters"}
+                    </div>
+                    <p className="text-sm text-neutral-500 mt-1">
+                      {isEmpty
+                        ? "Start by creating your first project."
+                        : "Try clearing the search or filter."}
+                    </p>
+                  </div>
+                  {isEmpty && (
+                    <Button
+                      onClick={openNew}
+                      className="rounded-none bg-neutral-950 hover:bg-neutral-800 mt-2"
+                      data-testid="empty-new-project-btn"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create project
+                    </Button>
+                  )}
+                </div>
+              );
+            }
+            return (
+              <div>
+                {filtered.map((p) => (
+                  <ProjectRow
+                    key={p.id}
+                    project={p}
+                    onChanged={load}
+                    onEdit={openEdit}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </section>
 
         <footer className="pt-6 text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-bold text-center">

@@ -79,7 +79,6 @@ export const ProjectDialog = ({ open, onOpenChange, project, onSaved }) => {
       onOpenChange(false);
     } catch (err) {
       toast.error("Failed to save project");
-      console.error(err);
     } finally {
       setSaving(false);
     }

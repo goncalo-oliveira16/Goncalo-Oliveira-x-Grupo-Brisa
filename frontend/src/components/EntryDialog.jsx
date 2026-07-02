@@ -71,7 +71,6 @@ export const EntryDialog = ({
       onOpenChange(false);
     } catch (err) {
       toast.error("Failed to save entry");
-      console.error(err);
     } finally {
       setSaving(false);
     }
