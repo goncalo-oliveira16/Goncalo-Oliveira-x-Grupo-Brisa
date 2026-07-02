@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -94,6 +95,9 @@ export const ProjectDialog = ({ open, onOpenChange, project, onSaved }) => {
           <DialogTitle className="font-display text-2xl font-bold tracking-tight">
             {isEdit ? "Edit Project" : "New Project"}
           </DialogTitle>
+          <DialogDescription className="text-sm text-neutral-500">
+            {isEdit ? "Update project details." : "Add a new project to track."}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">

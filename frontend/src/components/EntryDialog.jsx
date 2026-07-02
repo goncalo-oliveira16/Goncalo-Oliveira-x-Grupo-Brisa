@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -86,6 +87,9 @@ export const EntryDialog = ({
           <DialogTitle className="font-display text-2xl font-bold tracking-tight">
             {isEdit ? "Edit Entry" : "Log Hours"}
           </DialogTitle>
+          <DialogDescription className="text-sm text-neutral-500">
+            Track hours worked on this project.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

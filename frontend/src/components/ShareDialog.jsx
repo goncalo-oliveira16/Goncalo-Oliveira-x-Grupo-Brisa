@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { shareApi } from "@/lib/api";
@@ -58,6 +59,9 @@ export const ShareDialog = ({ open, onOpenChange }) => {
             <Link2 className="w-5 h-5" />
             Share with your boss
           </DialogTitle>
+          <DialogDescription className="text-sm text-neutral-500">
+            Read-only link — view access, no editing.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-neutral-600 leading-relaxed">
