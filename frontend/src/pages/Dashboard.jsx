@@ -28,21 +28,13 @@ const MONTH_LABELS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Return the reference date used for month bucketing:
+// Return the reference date used for month/year bucketing:
 // prefer deadline, fall back to created_at.
 const projectRefDate = (p) => {
   const raw = p.deadline || p.created_at;
   if (!raw) return null;
   const d = new Date(raw);
   return isNaN(d.getTime()) ? null : d;
-};
-
-const monthKey = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-
-const monthLabel = (key) => {
-  const [y, m] = key.split("-");
-  return `${MONTH_LABELS[Number(m) - 1]} ${y}`;
 };
 
 export default function Dashboard() {
@@ -54,6 +46,7 @@ export default function Dashboard() {
   const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState("all");
   const [monthFilter, setMonthFilter] = useState("all");
+  const [yearFilter, setYearFilter] = useState("all");
   const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
@@ -72,26 +65,40 @@ export default function Dashboard() {
     load();
   }, [load]);
 
+  const yearOptions = useMemo(() => {
+    const seen = new Set();
+    for (const p of projects) {
+      const d = projectRefDate(p);
+      if (d) seen.add(d.getFullYear());
+    }
+    return Array.from(seen).sort((a, b) => b - a);
+  }, [projects]);
+
   const monthOptions = useMemo(() => {
-    const seen = new Map();
+    // Which months exist in projects (optionally scoped to selected year).
+    const seen = new Set();
     for (const p of projects) {
       const d = projectRefDate(p);
       if (!d) continue;
-      const k = monthKey(d);
-      if (!seen.has(k)) seen.set(k, monthLabel(k));
+      if (yearFilter !== "all" && d.getFullYear() !== Number(yearFilter))
+        continue;
+      seen.add(d.getMonth()); // 0..11
     }
-    // newest first
-    return Array.from(seen.entries())
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .map(([value, label]) => ({ value, label }));
-  }, [projects]);
+    return Array.from(seen)
+      .sort((a, b) => a - b)
+      .map((m) => ({ value: String(m), label: MONTH_LABELS[m] }));
+  }, [projects, yearFilter]);
 
   const filtered = useMemo(() => {
     return projects.filter((p) => {
       if (filter !== "all" && p.status !== filter) return false;
-      if (monthFilter !== "all") {
+      if (yearFilter !== "all" || monthFilter !== "all") {
         const d = projectRefDate(p);
-        if (!d || monthKey(d) !== monthFilter) return false;
+        if (!d) return false;
+        if (yearFilter !== "all" && d.getFullYear() !== Number(yearFilter))
+          return false;
+        if (monthFilter !== "all" && d.getMonth() !== Number(monthFilter))
+          return false;
       }
       if (query.trim()) {
         const q = query.toLowerCase();
@@ -103,7 +110,7 @@ export default function Dashboard() {
       }
       return true;
     });
-  }, [projects, filter, monthFilter, query]);
+  }, [projects, filter, monthFilter, yearFilter, query]);
 
   const openNew = () => {
     setEditing(null);
@@ -195,12 +202,34 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="flex items-center gap-2">
+            <Select value={yearFilter} onValueChange={(v) => { setYearFilter(v); setMonthFilter("all"); }}>
+              <SelectTrigger
+                data-testid="year-filter"
+                className="rounded-none border-neutral-300 h-10 w-[130px] bg-white text-xs font-bold uppercase tracking-[0.1em]"
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5 text-neutral-500" />
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent className="rounded-none">
+                <SelectItem value="all" data-testid="year-filter-all">
+                  All Years
+                </SelectItem>
+                {yearOptions.map((y) => (
+                  <SelectItem
+                    key={y}
+                    value={String(y)}
+                    data-testid={`year-filter-${y}`}
+                  >
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={monthFilter} onValueChange={setMonthFilter}>
               <SelectTrigger
                 data-testid="month-filter"
-                className="rounded-none border-neutral-300 h-10 w-[160px] bg-white text-xs font-bold uppercase tracking-[0.1em]"
+                className="rounded-none border-neutral-300 h-10 w-[140px] bg-white text-xs font-bold uppercase tracking-[0.1em]"
               >
-                <Calendar className="w-3.5 h-3.5 mr-1.5 text-neutral-500" />
                 <SelectValue placeholder="Month" />
               </SelectTrigger>
               <SelectContent className="rounded-none">
@@ -225,7 +254,7 @@ export default function Dashboard() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search projects…"
-                className="rounded-none border-neutral-300 pl-9 h-10 w-64 bg-white"
+                className="rounded-none border-neutral-300 pl-9 h-10 w-56 bg-white"
               />
             </div>
           </div>

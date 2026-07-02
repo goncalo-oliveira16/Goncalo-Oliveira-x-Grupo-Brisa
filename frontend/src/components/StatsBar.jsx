@@ -26,7 +26,7 @@ export const StatsBar = ({ stats }) => {
   return (
     <div
       data-testid="stats-bar"
-      className="grid grid-cols-1 md:grid-cols-4 bg-white border border-neutral-200"
+      className="grid grid-cols-1 md:grid-cols-2 bg-white border border-neutral-200"
     >
       <Cell
         testId="stat-total-hours"
@@ -35,24 +35,10 @@ export const StatsBar = ({ stats }) => {
         subtle="hrs"
       />
       <Cell
-        testId="stat-week-hours"
-        label="This Week"
-        value={stats.hours_this_week ?? 0}
-        subtle="hrs"
-      />
-      <Cell
         testId="stat-active"
         label="Active Projects"
         value={stats.active ?? 0}
         subtle={`/ ${stats.total_projects ?? 0} total`}
-      />
-      <Cell
-        testId="stat-delivered"
-        label="Delivered"
-        value={
-          (stats.counts?.delivered ?? 0) + (stats.counts?.final ?? 0)
-        }
-        subtle={`${stats.counts?.final ?? 0} final`}
         last
       />
     </div>
