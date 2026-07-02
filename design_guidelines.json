@@ -1,0 +1,129 @@
+{
+  "project_context": {
+    "domain": "Productivity / Time Tracking Dashboard",
+    "theme": "Light",
+    "archetype": "Archetype 4 (Swiss & High-Contrast)",
+    "vibe": "Clean, minimal, professional, editorial, confident, restrained. No generic tech-SaaS styles. Highly objective and functional.",
+    "key_audiences": ["The Creator/Employee (Editor)", "The Boss (Viewer/Read-only)"]
+  },
+  "typography": {
+    "headings": {
+      "family": "Cabinet Grotesk, sans-serif",
+      "weight": "font-bold to font-black",
+      "tracking": "tracking-tight",
+      "usage": "Used for page titles, summary stat numbers, and primary section headers."
+    },
+    "body": {
+      "family": "Satoshi, sans-serif",
+      "weight": "font-medium",
+      "tracking": "tracking-normal",
+      "usage": "Used for all standard UI copy, descriptions, and lists."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "weight": "font-normal",
+      "tracking": "tracking-tight",
+      "usage": "Used strictly for numerical data, hours tracked, dates, and project metadata (like tags)."
+    },
+    "hierarchy_rules": {
+      "h1": "text-4xl sm:text-5xl font-black tracking-tighter text-neutral-950",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900",
+      "h3": "text-lg sm:text-xl font-bold text-neutral-900",
+      "body_text": "text-base text-neutral-700 leading-relaxed",
+      "small_label": "text-xs font-bold uppercase tracking-[0.1em] text-neutral-500",
+      "strikethrough_state": "line-through text-neutral-400 decoration-neutral-300 decoration-2"
+    }
+  },
+  "colors": {
+    "background": {
+      "main": "#FAFAFA",
+      "surface": "#FFFFFF",
+      "surface_muted": "#F3F3F3"
+    },
+    "text": {
+      "primary": "#0A0A0A",
+      "secondary": "#525252",
+      "tertiary": "#A3A3A3",
+      "inverse": "#FFFFFF"
+    },
+    "border": {
+      "default": "#E5E5E5",
+      "focus": "#0A0A0A"
+    },
+    "functional": {
+      "in_progress": {
+        "bg": "#F1F5F9",
+        "text": "#334155",
+        "border": "#CBD5E1",
+        "note": "Subtle slate grey/blue. Restrained."
+      },
+      "delivered": {
+        "bg": "#0A0A0A",
+        "text": "#FFFFFF",
+        "border": "#0A0A0A",
+        "note": "High contrast black block. Strong visual anchor."
+      },
+      "re_editing": {
+        "bg": "#FFFBEB",
+        "text": "#92400E",
+        "border": "#FDE68A",
+        "note": "Muted warm amber."
+      },
+      "final": {
+        "bg": "#F0FDF4",
+        "text": "#166534",
+        "border": "#BBF7D0",
+        "note": "Calm, muted emerald."
+      }
+    }
+  },
+  "layout_and_spacing": {
+    "container": "max-w-6xl mx-auto px-6 lg:px-12",
+    "spacing_scale": "Use generous padding: p-6 or p-8 for cards. gap-6 or gap-8 for grids.",
+    "patterns": {
+      "dashboard_header": "Solid surface with crisp border-b. High contrast typographic logo.",
+      "summary_stats": "Grid layout (grid-cols-2 md:grid-cols-4) with border-collapse technical look. Items separated by sharp 1px borders.",
+      "project_list": "Table or dense row-based layout. Rows separated by border-b. No heavy drop shadows. Focus on pure alignment."
+    }
+  },
+  "component_rules": {
+    "cards": "Flat design. bg-white, 1px solid border-neutral-200. NO box-shadow. Sharp corners (rounded-none or max rounded-sm).",
+    "buttons": {
+      "primary": "bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-6 py-2 transition-colors",
+      "secondary": "bg-white text-neutral-900 border border-neutral-200 hover:bg-neutral-50 rounded-none px-6 py-2 transition-colors"
+    },
+    "inputs": "bg-white border-neutral-200 rounded-none focus:ring-1 focus:ring-neutral-950 focus:border-neutral-950 transition-all",
+    "badges": "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider border",
+    "delivered_state_visual": "When a project is 'Delivered' or 'Final', the project title MUST have a strikethrough (line-through text-neutral-400), and its row background should slightly dim (bg-neutral-50) to instantly separate active vs completed tasks."
+  },
+  "motion_and_interactions": {
+    "hover_states": "Crisp and immediate. bg-color shifts only. Avoid floating or scaling animations to keep the print/editorial feel.",
+    "transitions": "transition-colors duration-150 ease-out",
+    "focus": "High contrast focus rings (ring-1 ring-neutral-950 ring-offset-2) required for all interactive elements."
+  },
+  "media_and_assets": {
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5, strict monochrome (neutral-900 or neutral-500)."
+    },
+    "images": [
+      {
+        "category": "share_link_header_background",
+        "url": "https://images.pexels.com/photos/14528986/pexels-photo-14528986.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Minimalist geometric architecture. Use as a very subtle, low-opacity (10%) background texture for the public 'Boss View' header to give it a high-end, premium feel."
+      }
+    ]
+  },
+  "testing": {
+    "attributes": [
+      "All buttons, inputs, tabs, and interactive rows MUST include `data-testid` attributes (e.g., `data-testid='add-project-btn'`, `data-testid='project-row-delivered'`)."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Install and configure Cabinet Grotesk, Satoshi, and JetBrains Mono fonts.",
+    "Implement the UI using pure Shadcn components but strip away their default border-radius (set to rounded-none or rounded-sm) and box-shadows to fit the Swiss/Brutalist look.",
+    "Ensure the 'Delivered' and 'Final' status apply a line-through CSS class to the Project Title.",
+    "Build a grid-based 'Control Room' style top section for summary stats.",
+    "The public share page (`/share/[token]`) must strip all edit buttons, inputs, and dropdowns, rendering purely as a read-only report."
+  ]
+}
