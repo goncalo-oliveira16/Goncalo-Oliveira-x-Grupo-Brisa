@@ -49,11 +49,31 @@ export default function Dashboard() {
   const [yearFilter, setYearFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [deadlineSort, setDeadlineSort] = useState(null); // null | "desc" | "asc"
+  const [statusSort, setStatusSort] = useState(null); // null | "desc" | "asc"
+
+  // Workflow order — used for sorting the Status column.
+  const STATUS_ORDER = {
+    in_progress: 0,
+    standby: 1,
+    re_editing: 2,
+    delivered: 3,
+    final: 4,
+  };
 
   const cycleDeadlineSort = () => {
+    setStatusSort(null);
     setDeadlineSort((s) => {
       if (s === null) return "desc";
       if (s === "desc") return "asc";
+      return null;
+    });
+  };
+
+  const cycleStatusSort = () => {
+    setDeadlineSort(null);
+    setStatusSort((s) => {
+      if (s === null) return "asc";
+      if (s === "asc") return "desc";
       return null;
     });
   };
@@ -126,6 +146,15 @@ export default function Dashboard() {
   }, [projects, filter, monthFilter, yearFilter, query]);
 
   const displayed = useMemo(() => {
+    if (statusSort !== null) {
+      const arr = [...filtered];
+      arr.sort((a, b) => {
+        const oa = STATUS_ORDER[a.status] ?? 99;
+        const ob = STATUS_ORDER[b.status] ?? 99;
+        return statusSort === "asc" ? oa - ob : ob - oa;
+      });
+      return arr;
+    }
     if (deadlineSort === null) return filtered;
     // Sort by deadline (falls back to created_at via projectRefDate).
     // Projects without any date always go to the bottom.
@@ -141,7 +170,7 @@ export default function Dashboard() {
       deadlineSort === "desc" ? b.t - a.t : a.t - b.t,
     );
     return [...withDate.map((x) => x.p), ...withoutDate];
-  }, [filtered, deadlineSort]);
+  }, [filtered, deadlineSort, statusSort]);
 
   const openNew = () => {
     setEditing(null);
@@ -300,7 +329,35 @@ export default function Dashboard() {
               Project
             </div>
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
-              Status
+              <button
+                type="button"
+                data-testid="status-sort-btn"
+                onClick={cycleStatusSort}
+                title={
+                  statusSort === "asc"
+                    ? "Sorted: workflow order (click to reverse)"
+                    : statusSort === "desc"
+                      ? "Sorted: reverse workflow order (click to clear)"
+                      : "Click to sort by status"
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 uppercase tracking-[0.15em] transition-colors",
+                  statusSort
+                    ? "text-neutral-950"
+                    : "text-neutral-500 hover:text-neutral-950",
+                )}
+              >
+                Status
+                {statusSort === "asc" && (
+                  <ArrowDown className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {statusSort === "desc" && (
+                  <ArrowUp className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {statusSort === null && (
+                  <ArrowUpDown className="w-3 h-3 opacity-50" strokeWidth={2} />
+                )}
+              </button>
             </div>
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
               Hours

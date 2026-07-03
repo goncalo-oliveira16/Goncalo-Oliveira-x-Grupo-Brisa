@@ -48,5 +48,5 @@ export const STATUS_MAP = STATUSES.reduce((acc, s) => {
   return acc;
 }, {});
 
-// Projects considered "done" — get strikethrough treatment
-export const DONE_STATUSES = new Set(["delivered", "final"]);
+// Only "final" gets the strikethrough treatment — delivered is not yet done.
+export const DONE_STATUSES = new Set(["final"]);

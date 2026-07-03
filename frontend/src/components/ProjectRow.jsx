@@ -33,11 +33,12 @@ const fmtDeadline = (d) => {
 export const ProjectRow = ({ project, onChanged, onEdit }) => {
   const done = DONE_STATUSES.has(project.status);
 
+  // Checkbox toggles between "final" (done) and "in_progress" (active).
   const toggleDone = async (checked) => {
-    const newStatus = checked ? "delivered" : "in_progress";
+    const newStatus = checked ? "final" : "in_progress";
     try {
       await projectsApi.update(project.id, { status: newStatus });
-      toast.success(checked ? "Marked as delivered" : "Reopened project");
+      toast.success(checked ? "Marked as final" : "Reopened project");
       onChanged?.();
     } catch {
       toast.error("Failed to update");
