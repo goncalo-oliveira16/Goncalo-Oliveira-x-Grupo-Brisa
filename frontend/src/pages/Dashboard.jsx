@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Share2, Search, Clock, LayoutGrid, Calendar } from "lucide-react";
+import { Plus, Share2, Search, Clock, LayoutGrid, Calendar, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { projectsApi, statsApi } from "@/lib/api";
 import { StatsBar } from "@/components/StatsBar";
 import { ProjectRow } from "@/components/ProjectRow";
@@ -48,6 +48,15 @@ export default function Dashboard() {
   const [monthFilter, setMonthFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [query, setQuery] = useState("");
+  const [deadlineSort, setDeadlineSort] = useState(null); // null | "desc" | "asc"
+
+  const cycleDeadlineSort = () => {
+    setDeadlineSort((s) => {
+      if (s === null) return "desc";
+      if (s === "desc") return "asc";
+      return null;
+    });
+  };
 
   const load = useCallback(async () => {
     try {
@@ -115,6 +124,24 @@ export default function Dashboard() {
       return true;
     });
   }, [projects, filter, monthFilter, yearFilter, query]);
+
+  const displayed = useMemo(() => {
+    if (deadlineSort === null) return filtered;
+    // Sort by deadline (falls back to created_at via projectRefDate).
+    // Projects without any date always go to the bottom.
+    const withDate = [];
+    const withoutDate = [];
+    for (const p of filtered) {
+      const raw = p.deadline;
+      const d = raw ? new Date(raw) : null;
+      if (d && !isNaN(d.getTime())) withDate.push({ p, t: d.getTime() });
+      else withoutDate.push(p);
+    }
+    withDate.sort((a, b) =>
+      deadlineSort === "desc" ? b.t - a.t : a.t - b.t,
+    );
+    return [...withDate.map((x) => x.p), ...withoutDate];
+  }, [filtered, deadlineSort]);
 
   const openNew = () => {
     setEditing(null);
@@ -279,7 +306,35 @@ export default function Dashboard() {
               Hours
             </div>
             <div className="col-span-1 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
-              Deadline
+              <button
+                type="button"
+                data-testid="deadline-sort-btn"
+                onClick={cycleDeadlineSort}
+                title={
+                  deadlineSort === "desc"
+                    ? "Sorted: newest first (click for oldest first)"
+                    : deadlineSort === "asc"
+                      ? "Sorted: oldest first (click to clear)"
+                      : "Click to sort by deadline"
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 uppercase tracking-[0.15em] transition-colors",
+                  deadlineSort
+                    ? "text-neutral-950"
+                    : "text-neutral-500 hover:text-neutral-950",
+                )}
+              >
+                Deadline
+                {deadlineSort === "desc" && (
+                  <ArrowDown className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {deadlineSort === "asc" && (
+                  <ArrowUp className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {deadlineSort === null && (
+                  <ArrowUpDown className="w-3 h-3 opacity-50" strokeWidth={2} />
+                )}
+              </button>
             </div>
             <div className="col-span-1"></div>
           </div>
@@ -292,7 +347,7 @@ export default function Dashboard() {
                 </div>
               );
             }
-            if (filtered.length === 0) {
+            if (displayed.length === 0) {
               const isEmpty = projects.length === 0;
               return (
                 <div
@@ -327,7 +382,7 @@ export default function Dashboard() {
             }
             return (
               <div>
-                {filtered.map((p) => (
+                {displayed.map((p) => (
                   <ProjectRow
                     key={p.id}
                     project={p}
