@@ -22,8 +22,8 @@ export const STATUSES = [
     label: "Delivered",
     short: "Delivered",
     Icon: CheckSquare,
-    className: "bg-neutral-950 text-white border-neutral-950",
-    dot: "bg-white",
+    className: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    dot: "bg-emerald-600",
   },
   {
     value: "re_editing",
@@ -38,8 +38,8 @@ export const STATUSES = [
     label: "Final",
     short: "Final",
     Icon: CheckCircle2,
-    className: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    dot: "bg-emerald-600",
+    className: "bg-neutral-950 text-white border-neutral-950",
+    dot: "bg-white",
   },
 ];
 

@@ -131,6 +131,27 @@ async def get_or_create_share_token() -> str:
     return token
 
 
+# Statuses that get auto-toggled between in_progress <-> standby based on hours.
+# Terminal / manual statuses (delivered, re_editing, final) are never overridden.
+_AUTO_TOGGLE = {"in_progress", "standby"}
+
+
+async def auto_sync_status(project_id: str) -> None:
+    """Keep status in sync with hours for non-terminal projects:
+    0 hours + auto-toggle status → standby; > 0 hours + auto-toggle status → in_progress.
+    """
+    project = await db.projects.find_one({"id": project_id}, {"_id": 0})
+    if not project or project.get("status") not in _AUTO_TOGGLE:
+        return
+    total = await compute_total_hours(project_id)
+    desired = "standby" if total <= 0 else "in_progress"
+    if project.get("status") != desired:
+        await db.projects.update_one(
+            {"id": project_id},
+            {"$set": {"status": desired, "updated_at": now_iso()}},
+        )
+
+
 # -------------------- Project routes --------------------
 
 @api_router.get("/projects")
@@ -147,7 +168,12 @@ async def list_projects():
 
 @api_router.post("/projects")
 async def create_project(payload: ProjectCreate):
-    project = Project(**payload.model_dump())
+    data = payload.model_dump()
+    # A brand-new project has 0 hours — if the caller didn't pick a terminal
+    # status, default it to "standby" so it lines up with the auto-toggle rule.
+    if data.get("status") == "in_progress":
+        data["status"] = "standby"
+    project = Project(**data)
     await db.projects.insert_one(project.model_dump())
     result = project.model_dump()
     result["total_hours"] = 0.0
@@ -202,6 +228,7 @@ async def create_entry(project_id: str, payload: TimeEntryCreate):
         raise HTTPException(status_code=404, detail="Project not found")
     entry = TimeEntry(project_id=project_id, **payload.model_dump())
     await db.time_entries.insert_one(entry.model_dump())
+    await auto_sync_status(project_id)
     return entry.model_dump()
 
 
@@ -214,14 +241,20 @@ async def update_entry(entry_id: str, payload: TimeEntryUpdate):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Entry not found")
     doc = await db.time_entries.find_one({"id": entry_id}, {"_id": 0})
+    if doc and doc.get("project_id"):
+        await auto_sync_status(doc["project_id"])
     return doc
 
 
 @api_router.delete("/entries/{entry_id}")
 async def delete_entry(entry_id: str):
+    # Fetch first so we know which project's status to re-sync after deletion.
+    doc = await db.time_entries.find_one({"id": entry_id}, {"_id": 0})
     result = await db.time_entries.delete_one({"id": entry_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Entry not found")
+    if doc and doc.get("project_id"):
+        await auto_sync_status(doc["project_id"])
     return {"ok": True}
 
 
