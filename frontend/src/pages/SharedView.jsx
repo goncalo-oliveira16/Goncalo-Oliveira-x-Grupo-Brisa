@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { shareApi } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { DONE_STATUSES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { Lock, Clock } from "lucide-react";
+import { Lock, Clock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 const fmt = (d) => {
   if (!d) return "—";
@@ -38,6 +38,36 @@ export default function SharedView() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
+  const [deadlineSort, setDeadlineSort] = useState(null); // null | "desc" | "asc"
+  const [statusSort, setStatusSort] = useState(null); // null | "asc" | "desc"
+
+  const STATUS_ORDER = {
+    in_progress: 0,
+    standby: 1,
+    re_editing: 2,
+    delivered: 3,
+    final: 4,
+  };
+
+  const cycleDeadlineSort = (e) => {
+    e.stopPropagation();
+    setStatusSort(null);
+    setDeadlineSort((s) => {
+      if (s === null) return "desc";
+      if (s === "desc") return "asc";
+      return null;
+    });
+  };
+
+  const cycleStatusSort = (e) => {
+    e.stopPropagation();
+    setDeadlineSort(null);
+    setStatusSort((s) => {
+      if (s === null) return "asc";
+      if (s === "asc") return "desc";
+      return null;
+    });
+  };
 
   useEffect(() => {
     shareApi
@@ -46,6 +76,33 @@ export default function SharedView() {
       .catch(() => setError("This share link is invalid or has been revoked."))
       .finally(() => setLoading(false));
   }, [token]);
+
+  const projects = data?.projects || [];
+
+  const displayed = useMemo(() => {
+    if (statusSort !== null) {
+      const arr = [...projects];
+      arr.sort((a, b) => {
+        const oa = STATUS_ORDER[a.status] ?? 99;
+        const ob = STATUS_ORDER[b.status] ?? 99;
+        return statusSort === "asc" ? oa - ob : ob - oa;
+      });
+      return arr;
+    }
+    if (deadlineSort === null) return projects;
+    const withDate = [];
+    const withoutDate = [];
+    for (const p of projects) {
+      const raw = p.deadline;
+      const d = raw ? new Date(raw) : null;
+      if (d && !isNaN(d.getTime())) withDate.push({ p, t: d.getTime() });
+      else withoutDate.push(p);
+    }
+    withDate.sort((a, b) =>
+      deadlineSort === "desc" ? b.t - a.t : a.t - b.t,
+    );
+    return [...withDate.map((x) => x.p), ...withoutDate];
+  }, [projects, deadlineSort, statusSort]);
 
   if (loading) {
     return (
@@ -69,7 +126,6 @@ export default function SharedView() {
     );
   }
 
-  const projects = data?.projects || [];
   const activeCount = projects.filter(
     (p) => !DONE_STATUSES.has(p.status),
   ).length;
@@ -147,13 +203,55 @@ export default function SharedView() {
               Project
             </div>
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
-              Status
+              <button
+                type="button"
+                data-testid="shared-status-sort-btn"
+                onClick={cycleStatusSort}
+                className={cn(
+                  "inline-flex items-center gap-1 uppercase tracking-[0.15em] transition-colors",
+                  statusSort
+                    ? "text-neutral-950"
+                    : "text-neutral-500 hover:text-neutral-950",
+                )}
+              >
+                Status
+                {statusSort === "asc" && (
+                  <ArrowDown className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {statusSort === "desc" && (
+                  <ArrowUp className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {statusSort === null && (
+                  <ArrowUpDown className="w-3 h-3 opacity-50" strokeWidth={2} />
+                )}
+              </button>
             </div>
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
               Hours
             </div>
             <div className="col-span-2 text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
-              Deadline
+              <button
+                type="button"
+                data-testid="shared-deadline-sort-btn"
+                onClick={cycleDeadlineSort}
+                className={cn(
+                  "inline-flex items-center gap-1 uppercase tracking-[0.15em] transition-colors",
+                  deadlineSort
+                    ? "text-neutral-950"
+                    : "text-neutral-500 hover:text-neutral-950",
+                )}
+              >
+                Deadline
+                {deadlineSort === "desc" && (
+                  <ArrowDown className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {deadlineSort === "asc" && (
+                  <ArrowUp className="w-3 h-3" strokeWidth={2.5} />
+                )}
+                {deadlineSort === null && (
+                  <ArrowUpDown className="w-3 h-3 opacity-50" strokeWidth={2} />
+                )}
+              </button>
             </div>
           </div>
 
@@ -162,7 +260,7 @@ export default function SharedView() {
               No projects to show yet.
             </div>
           ) : (
-            projects.map((p) => {
+            displayed.map((p) => {
               const done = DONE_STATUSES.has(p.status);
               const isOpen = expanded[p.id];
               return (
