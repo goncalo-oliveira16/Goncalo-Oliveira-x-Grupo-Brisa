@@ -94,6 +94,30 @@ async def compute_total_hours(project_id: str) -> float:
     return round(total, 2)
 
 
+async def hours_by_project() -> dict:
+    """Single-query aggregate: {project_id: total_hours} across ALL entries."""
+    totals: dict = {}
+    cursor = db.time_entries.find({}, {"project_id": 1, "hours": 1, "_id": 0})
+    async for e in cursor:
+        pid = e.get("project_id")
+        if pid is None:
+            continue
+        totals[pid] = totals.get(pid, 0.0) + float(e.get("hours", 0) or 0)
+    return {k: round(v, 2) for k, v in totals.items()}
+
+
+async def entries_by_project() -> dict:
+    """Single-query aggregate: {project_id: [entries...]} across ALL entries."""
+    grouped: dict = {}
+    cursor = db.time_entries.find({}, {"_id": 0})
+    async for e in cursor:
+        pid = e.get("project_id")
+        if pid is None:
+            continue
+        grouped.setdefault(pid, []).append(e)
+    return grouped
+
+
 async def get_or_create_share_token() -> str:
     doc = await db.settings.find_one({"key": "share_token"})
     if doc and doc.get("value"):
@@ -112,8 +136,9 @@ async def get_or_create_share_token() -> str:
 @api_router.get("/projects")
 async def list_projects():
     projects = await db.projects.find({}, {"_id": 0}).to_list(1000)
+    totals = await hours_by_project()
     for p in projects:
-        p["total_hours"] = await compute_total_hours(p["id"])
+        p["total_hours"] = totals.get(p["id"], 0.0)
     # Sort: active first (in_progress, re_editing), then delivered, then final; newest first within groups
     order = {"in_progress": 0, "re_editing": 1, "delivered": 2, "final": 3}
     projects.sort(key=lambda p: (order.get(p.get("status", "in_progress"), 9), p.get("created_at", "")), reverse=False)
@@ -264,12 +289,15 @@ async def get_shared_dashboard(token: str):
         raise HTTPException(status_code=404, detail="Invalid share link")
 
     projects = await db.projects.find({}, {"_id": 0}).to_list(1000)
+    totals = await hours_by_project()
+    grouped = await entries_by_project()
     for p in projects:
-        p["total_hours"] = await compute_total_hours(p["id"])
-        p["entries"] = await db.time_entries.find(
-            {"project_id": p["id"]}, {"_id": 0}
-        ).to_list(1000)
-        p["entries"].sort(key=lambda e: e.get("date", ""), reverse=True)
+        p["total_hours"] = totals.get(p["id"], 0.0)
+        p["entries"] = sorted(
+            grouped.get(p["id"], []),
+            key=lambda e: e.get("date", ""),
+            reverse=True,
+        )
 
     order = {"in_progress": 0, "re_editing": 1, "delivered": 2, "final": 3}
     projects.sort(key=lambda p: (order.get(p.get("status", "in_progress"), 9), p.get("created_at", "")))
