@@ -1,4 +1,4 @@
-import { Circle, CheckSquare, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Circle, CheckSquare, RefreshCw, CheckCircle2, PauseCircle } from "lucide-react";
 
 export const STATUSES = [
   {
@@ -8,6 +8,14 @@ export const STATUSES = [
     Icon: Circle,
     className: "bg-slate-100 text-slate-700 border-slate-300",
     dot: "bg-slate-500",
+  },
+  {
+    value: "standby",
+    label: "Standby",
+    short: "Standby",
+    Icon: PauseCircle,
+    className: "bg-purple-100 text-purple-800 border-purple-300",
+    dot: "bg-purple-600",
   },
   {
     value: "delivered",

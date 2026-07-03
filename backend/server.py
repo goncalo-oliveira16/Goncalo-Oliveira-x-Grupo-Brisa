@@ -23,7 +23,7 @@ api_router = APIRouter(prefix="/api")
 
 # -------------------- Models --------------------
 
-ProjectStatus = Literal["in_progress", "delivered", "re_editing", "final"]
+ProjectStatus = Literal["in_progress", "standby", "delivered", "re_editing", "final"]
 
 
 def now_iso() -> str:
@@ -139,8 +139,8 @@ async def list_projects():
     totals = await hours_by_project()
     for p in projects:
         p["total_hours"] = totals.get(p["id"], 0.0)
-    # Sort: active first (in_progress, re_editing), then delivered, then final; newest first within groups
-    order = {"in_progress": 0, "re_editing": 1, "delivered": 2, "final": 3}
+    # Sort: active first (in_progress, standby, re_editing), then delivered, then final; newest first within groups
+    order = {"in_progress": 0, "standby": 1, "re_editing": 2, "delivered": 3, "final": 4}
     projects.sort(key=lambda p: (order.get(p.get("status", "in_progress"), 9), p.get("created_at", "")), reverse=False)
     return projects
 
@@ -248,7 +248,7 @@ async def get_stats():
         except Exception:
             continue
 
-    counts = {"in_progress": 0, "delivered": 0, "re_editing": 0, "final": 0}
+    counts = {"in_progress": 0, "standby": 0, "delivered": 0, "re_editing": 0, "final": 0}
     for p in projects:
         s = p.get("status", "in_progress")
         if s in counts:
@@ -258,7 +258,7 @@ async def get_stats():
         "total_projects": len(projects),
         "total_hours": round(total_hours, 2),
         "hours_this_week": round(hours_week, 2),
-        "active": counts["in_progress"] + counts["re_editing"],
+        "active": counts["in_progress"] + counts["re_editing"] + counts["standby"],
         "counts": counts,
     }
 
@@ -299,7 +299,7 @@ async def get_shared_dashboard(token: str):
             reverse=True,
         )
 
-    order = {"in_progress": 0, "re_editing": 1, "delivered": 2, "final": 3}
+    order = {"in_progress": 0, "standby": 1, "re_editing": 2, "delivered": 3, "final": 4}
     projects.sort(key=lambda p: (order.get(p.get("status", "in_progress"), 9), p.get("created_at", "")))
 
     total_hours = sum(p["total_hours"] for p in projects)
